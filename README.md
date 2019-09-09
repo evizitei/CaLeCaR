@@ -14,8 +14,9 @@ default behavior:
 
 ### TODO
 
-[ ] create http server that logs to file
+[-] create http server that logs to file
 [ ] define cache fetch operation with null response
+[ ] wrap tests around extracted functionality
 [ ] create http client program to fetch a set of keys from server
 [ ] parameterize server with data file (key, val, cost)
 [ ] http server on start creates data reader
