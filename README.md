@@ -1,6 +1,12 @@
 # lcr-cache
 C.S. capstone project, evaluate "least costly recomputation" cache replacement policy as a member of a learned weighted policy choice system.
 
+## Usage
+
+The server that runs caching strategies is in cmd/server.
+It can be compiled with `make build` and executed then
+with `./bin/server`
+
 ### TODO
 
 [ ] create http server that logs to file
