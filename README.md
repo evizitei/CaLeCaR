@@ -7,6 +7,11 @@ The server that runs caching strategies is in cmd/server.
 It can be compiled with `make build` and executed then
 with `./bin/server`
 
+This command accepts arguments for changing it's
+default behavior:
+
+`./bin/server -logfile /tmp/cache_server.log`
+
 ### TODO
 
 [ ] create http server that logs to file
