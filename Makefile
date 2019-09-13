@@ -6,4 +6,7 @@ build:
 clean:
 	rm bin/*
 
-.PHONY: clean default build test
+serve:
+	./bin/server -logfile ./log/server.log -data_file ./data/test_set_1.csv
+
+.PHONY: clean default build serve test
