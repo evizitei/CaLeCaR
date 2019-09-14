@@ -53,9 +53,8 @@ func (s *Server) handleConnection(c net.Conn) {
 			s.logger.Println("No Entry for |" + fetchKey + "|")
 			c.Write([]byte("No Entry For Key: " + fetchKey + "\n"))
 		} else {
-			c.Write([]byte("Found Entry! COST: " + strconv.Itoa(entry.cost) + "\n"))
-			c.Write([]byte(entry.value))
-			c.Write([]byte("\n"))
+			c.Write([]byte("VALUE:" + entry.value + "\n"))
+			c.Write([]byte("COST:" + strconv.Itoa(entry.cost) + "\n"))
 		}
 		c.Close()
 	} else {
