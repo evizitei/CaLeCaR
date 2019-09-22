@@ -55,13 +55,15 @@ func (s *Server) handleConnection(c net.Conn) {
 		fetchKey := strings.TrimSpace(strings.Replace(messageParts[1], "\n", "", -1))
 		s.logger.Println("Fetching ", fetchKey)
 		if s.cache.KeyPresent(fetchKey) {
+			s.logger.Println("Found in cache! ", fetchKey)
 			entry, err := s.cache.GetValue(fetchKey)
 			if err != nil {
 				s.logger.Println("ERROR IN CACHE: ", err)
 				return
 			}
 			c.Write([]byte("VALUE:" + entry.value + "\n"))
-			c.Write([]byte("COST: 0\n"))
+			c.Write([]byte("COST:0\n"))
+			c.Close()
 			return
 		}
 		entry, ok := (*s.dataset)[fetchKey]

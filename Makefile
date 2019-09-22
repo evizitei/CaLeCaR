@@ -8,7 +8,11 @@ clean:
 	rm bin/*
 
 serve:
-	./bin/server -logfile ./log/server.log -data_file ./data/test_set_1.csv
+	./bin/server \
+	  -logfile ./log/server.log \
+	  -data_file ./data/test_set_1.csv \
+	  -cache_type FIFO \
+	  -cache_size 12
 
 query:
 	./bin/client -keyfile ./data/client/traffic_set_baseline.csv

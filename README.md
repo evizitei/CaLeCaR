@@ -53,9 +53,9 @@ Again, there's a make task: `make query`
 [-] client log produces cost assessment for each item it fetches
 [-] client program summarizes traffic type and cost
 
-[ ] parameterize cache size
-[ ] implement NONE cache replacement strategy
-[ ] parameterize cache replacement strategy, implement FIFO
+[-] parameterize cache size
+[-] implement NONE cache replacement strategy
+[-] parameterize cache replacement strategy, implement FIFO
 [ ] implement LRU
 [ ] implement LFU
 [ ] implement LCR
