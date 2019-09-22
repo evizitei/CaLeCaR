@@ -10,12 +10,35 @@ with `./bin/server`
 This command accepts arguments for changing it's
 default behavior:
 
-`./bin/server -logfile ./log/server.log -data_file ./data/test_set_1.json`
+```bash
+./bin/server \
+  -logfile ./log/server.log \
+  -data_file ./data/test_set_1.csv \
+  -cache_type NONE \
+  -cache_size 0
+```
 
 There's a make task for launching this:  `make serve`
 
 One easy way to test the server is to use something like
 "nc" (netcat) to poke at the server and fetch values:
+
+```bash
+evizitei-ltemp:~ evizitei$ nc localhost 1234
+fetch,key1
+VALUE:val1
+COST:2
+```
+
+To try a bunch of queries in order to really exercise the caching
+behavior, try using the client program:
+
+```bash
+./bin/client \
+  -keyfile ./data/client/traffic_set_baseline.csv
+```
+
+Again, there's a make task: `make query`
 
 
 ### TODO
@@ -30,8 +53,15 @@ One easy way to test the server is to use something like
 [-] client log produces cost assessment for each item it fetches
 [-] client program summarizes traffic type and cost
 
+[ ] parameterize cache size
+[ ] implement NONE cache replacement strategy
+[ ] parameterize cache replacement strategy, implement FIFO
+[ ] implement LRU
+[ ] implement LFU
+[ ] implement LCR
+
 [ ] wrap tests around extracted functionality
 [ ] parameterize server with cache size (in record/key count)
 [ ] tcp server on start creates mem cache with declared size constraint
-[ ] parameterize cache replacement strategy, implement FIFO
+
 [ ] parameterize port (1234 by default)

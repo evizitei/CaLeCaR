@@ -16,11 +16,16 @@ import (
 config params for parameterizing the cache
 server*/
 type ServerConf struct {
-	LogFile  *string
-	DataFile *string
+	LogFile   *string
+	DataFile  *string
+	CacheType *string
+	CacheSize int
 }
 
-type cacheEntry struct {
+/*Entry is the thing stored in a cache, both
+the actual value of the result and the measured
+cost to recompute it*/
+type Entry struct {
 	value string
 	cost  int
 }
@@ -29,8 +34,9 @@ type cacheEntry struct {
 fetch requests and returns them from the data file*/
 type Server struct {
 	config  *ServerConf
-	dataset *map[string]cacheEntry
+	dataset *map[string]Entry
 	logger  *log.Logger
+	cache   Cache
 }
 
 func (s *Server) handleConnection(c net.Conn) {
@@ -48,6 +54,16 @@ func (s *Server) handleConnection(c net.Conn) {
 	if command == "fetch" {
 		fetchKey := strings.TrimSpace(strings.Replace(messageParts[1], "\n", "", -1))
 		s.logger.Println("Fetching ", fetchKey)
+		if s.cache.KeyPresent(fetchKey) {
+			entry, err := s.cache.GetValue(fetchKey)
+			if err != nil {
+				s.logger.Println("ERROR IN CACHE: ", err)
+				return
+			}
+			c.Write([]byte("VALUE:" + entry.value + "\n"))
+			c.Write([]byte("COST: 0\n"))
+			return
+		}
 		entry, ok := (*s.dataset)[fetchKey]
 		if !ok {
 			s.logger.Println("No Entry for |" + fetchKey + "|")
@@ -55,6 +71,7 @@ func (s *Server) handleConnection(c net.Conn) {
 		} else {
 			c.Write([]byte("VALUE:" + entry.value + "\n"))
 			c.Write([]byte("COST:" + strconv.Itoa(entry.cost) + "\n"))
+			s.cache.SetValue(fetchKey, entry)
 		}
 		c.Close()
 	} else {
@@ -94,8 +111,8 @@ func buildLogger(logfile *string) *log.Logger {
 	return logger
 }
 
-func loadDataset(datafile *string) *map[string]cacheEntry {
-	dataMap := make(map[string]cacheEntry)
+func loadDataset(datafile *string) *map[string]Entry {
+	dataMap := make(map[string]Entry)
 	dFile, err := os.OpenFile(*datafile, os.O_RDONLY, 0666)
 	if err != nil {
 		fmt.Println("ERROR opening dataset: ", err)
@@ -114,7 +131,7 @@ func loadDataset(datafile *string) *map[string]cacheEntry {
 		if err != nil {
 			fmt.Println("Error reading cost value from file: ", err)
 		}
-		entry := cacheEntry{
+		entry := Entry{
 			value: row[1],
 			cost:  cost,
 		}
@@ -126,9 +143,15 @@ func loadDataset(datafile *string) *map[string]cacheEntry {
 /*NewServer is a constructor for building a new server
 with config onboard */
 func NewServer(conf *ServerConf) *Server {
+	logger := buildLogger(conf.LogFile)
+	cache, err := NewCache(*conf.CacheType, conf.CacheSize)
+	if err != nil {
+		logger.Fatalln("Error while constructing cache: ", err)
+	}
 	return &Server{
 		config:  conf,
 		dataset: loadDataset(conf.DataFile),
-		logger:  buildLogger(conf.LogFile),
+		logger:  logger,
+		cache:   cache,
 	}
 }
