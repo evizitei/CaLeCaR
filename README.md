@@ -56,7 +56,7 @@ Again, there's a make task: `make query`
 [-] parameterize cache size
 [-] implement NONE cache replacement strategy
 [-] parameterize cache replacement strategy, implement FIFO
-[ ] implement LRU
+[-] implement LRU
 [ ] implement LFU
 [ ] implement LCR
 
