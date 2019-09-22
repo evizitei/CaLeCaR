@@ -102,7 +102,108 @@ func (ff *FiFo) SetValue(k string, v Entry) error {
 
 func newFifo(size int) *FiFo {
 	lk := make(map[string]*fifoNode)
-	return &FiFo{maxSize: size, length: 0, head: nil, lookup: lk}
+	return &FiFo{maxSize: size, length: 0, head: nil, tail: nil, lookup: lk}
+}
+
+/*useful for easily tracking the "least recently accessed" added node in the
+cache*/
+type lruNode struct {
+	key   string
+	entry Entry
+	prev  *lruNode
+	next  *lruNode
+}
+
+/*Lru is a cache implementation adapting to access time.
+When full, it will always decide to evict the key touched the longest ago.*/
+type Lru struct {
+	maxSize int
+	length  int
+	head    *lruNode
+	tail    *lruNode
+	lookup  map[string]*lruNode
+}
+
+/*KeyPresent is true if the key is in the cache right now*/
+func (l *Lru) KeyPresent(k string) bool {
+	_, ok := l.lookup[k]
+	return ok
+}
+
+/*GetValue will return the entry if present in the lookup*/
+func (l *Lru) GetValue(k string) (Entry, error) {
+	node, ok := l.lookup[k]
+	if !ok {
+		return Entry{}, errors.New("Key not present in lookup hash")
+	}
+	// promote entry to most recently accessed
+	if node == l.tail {
+		// do nothing, it's already most recently accessed
+	} else if node == l.head {
+		// just move head to tail
+		newHead := node.next
+		newHead.prev = nil
+		l.head = newHead
+		prevTail := l.tail
+		node.prev = prevTail
+		prevTail.next = node
+		l.tail = node
+		node.next = nil
+	} else {
+		// in the middle, stitch two nodes together and move to tail
+		oldPrev := node.prev
+		oldNext := node.next
+		oldPrev.next = oldNext
+		oldNext.prev = oldPrev
+		prevTail := l.tail
+		node.prev = prevTail
+		node.next = nil
+		prevTail.next = node
+		l.tail = node
+	}
+	return node.entry, nil
+}
+
+/*SetValue inserts a new cache entry, evicting one if necessary*/
+func (l *Lru) SetValue(k string, v Entry) error {
+	if l.length == 0 {
+		// create list head/tail
+		node := &lruNode{entry: v, key: k}
+		l.head = node
+		l.tail = node
+		l.lookup[k] = node
+		l.length = 1
+		return nil
+	} else if l.length == l.maxSize {
+		// evict one entry
+		newNode := &lruNode{entry: v, key: k}
+		prevHead := l.head
+		delete(l.lookup, prevHead.key)
+		newHead := prevHead.next
+		newHead.prev = nil
+		l.head = newHead
+		prevTail := l.tail
+		prevTail.next = newNode
+		newNode.prev = prevTail
+		l.tail = newNode
+		l.lookup[k] = newNode
+		// length does not change
+		return nil
+	}
+	// just grow the list
+	newNode := &lruNode{entry: v, key: k}
+	prevTail := l.tail
+	prevTail.next = newNode
+	newNode.prev = prevTail
+	l.tail = newNode
+	l.lookup[k] = newNode
+	l.length = l.length + 1
+	return nil
+}
+
+func newLru(size int) *Lru {
+	lk := make(map[string]*lruNode)
+	return &Lru{maxSize: size, length: 0, head: nil, tail: nil, lookup: lk}
 }
 
 /*NewCache is a factory for building a cache implementation
@@ -112,6 +213,8 @@ func NewCache(cacheType string, size int) (Cache, error) {
 		return &NoOp{}, nil
 	} else if cacheType == "FIFO" {
 		return newFifo(size), nil
+	} else if cacheType == "LRU" {
+		return newLru(size), nil
 	}
 	return &NoOp{}, errors.New("No cache exists of type '" + cacheType + "'")
 }

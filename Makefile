@@ -11,7 +11,7 @@ serve:
 	./bin/server \
 	  -logfile ./log/server.log \
 	  -data_file ./data/test_set_1.csv \
-	  -cache_type FIFO \
+	  -cache_type LRU \
 	  -cache_size 12
 
 query:
