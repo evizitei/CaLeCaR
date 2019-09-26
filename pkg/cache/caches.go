@@ -206,6 +206,126 @@ func newLru(size int) *Lru {
 	return &Lru{maxSize: size, length: 0, head: nil, tail: nil, lookup: lk}
 }
 
+/*useful for easily tracking the "least frequently accessed" added node in the
+cache*/
+type lfuNode struct {
+	key         string
+	entry       Entry
+	accessCount int
+	prev        *lfuNode
+	next        *lfuNode
+}
+
+/*Lfu is a cache implementation adapting to access frequency.
+When full, it will always decide to evict the key touched the least number of times.*/
+type Lfu struct {
+	maxSize int
+	length  int
+	head    *lfuNode
+	tail    *lfuNode
+	lookup  map[string]*lfuNode
+}
+
+/*KeyPresent is true if the key is in the cache right now*/
+func (l *Lfu) KeyPresent(k string) bool {
+	_, ok := l.lookup[k]
+	return ok
+}
+
+func (l *Lfu) reorderList(node *lfuNode) {
+	for {
+		if node.accessCount > node.next.accessCount {
+			// swap positions
+			if node.prev == nil {
+				// node is currently HEAD
+				newHead := node.next
+				rightHead := newHead.next
+				newHead.prev = nil
+				node.next = rightHead
+				node.prev = newHead
+				rightHead.prev = node
+				l.head = newHead
+			} else {
+				// node in the middle of list
+				leftTail := node.prev
+				swapNode := node.next
+				rightHead := swapNode.next
+				leftTail.next = swapNode
+				swapNode.prev = leftTail
+				swapNode.next = node
+				node.prev = swapNode
+				node.next = rightHead
+				if rightHead == nil {
+					// node is now tail
+					l.tail = node
+					return
+				}
+				rightHead.prev = node
+			}
+		} else {
+			return
+		}
+	}
+}
+
+/*GetValue will return the entry if present in the lookup*/
+func (l *Lfu) GetValue(k string) (Entry, error) {
+	node, ok := l.lookup[k]
+	if !ok {
+		return Entry{}, errors.New("Key not present in lookup hash")
+	}
+	node.accessCount++
+	// move node to the right until it is accessed more
+	// than prev and less than next, or until it is the tail
+	if node == l.tail {
+		// do nothing, it's already the most frequently accessed
+	} else {
+		l.reorderList(node)
+	}
+	return node.entry, nil
+}
+
+/*SetValue inserts a new cache entry, evicting one if necessary*/
+func (l *Lfu) SetValue(k string, v Entry) error {
+	if l.length == 0 {
+		// create list head/tail
+		node := &lfuNode{entry: v, key: k, accessCount: 1}
+		l.head = node
+		l.tail = node
+		l.lookup[k] = node
+		l.length = 1
+		return nil
+	} else if l.length == l.maxSize {
+		// evict one entry
+		newNode := &lfuNode{entry: v, key: k, accessCount: 1}
+		prevHead := l.head
+		delete(l.lookup, prevHead.key)
+		newHead := prevHead.next
+		newHead.prev = nil
+		l.head = newNode
+		newNode.next = newHead
+		newHead.prev = newNode
+		l.lookup[k] = newNode
+		l.reorderList(newNode)
+		// length does not change
+		return nil
+	}
+	// just grow the list
+	newNode := &lfuNode{entry: v, key: k, accessCount: 1}
+	oldHead := l.head
+	newNode.next = oldHead
+	oldHead.prev = newNode
+	l.head = newNode
+	l.lookup[k] = newNode
+	l.reorderList(newNode)
+	return nil
+}
+
+func newLfu(size int) *Lfu {
+	lk := make(map[string]*lfuNode)
+	return &Lfu{maxSize: size, length: 0, head: nil, tail: nil, lookup: lk}
+}
+
 /*NewCache is a factory for building a cache implementation
 of the requested strategy*/
 func NewCache(cacheType string, size int) (Cache, error) {
@@ -215,6 +335,8 @@ func NewCache(cacheType string, size int) (Cache, error) {
 		return newFifo(size), nil
 	} else if cacheType == "LRU" {
 		return newLru(size), nil
+	} else if cacheType == "LFU" {
+		return newLfu(size), nil
 	}
 	return &NoOp{}, errors.New("No cache exists of type '" + cacheType + "'")
 }

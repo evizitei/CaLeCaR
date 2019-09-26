@@ -59,6 +59,10 @@ Again, there's a make task: `make query`
 [-] implement LRU
 [ ] implement LFU
 [ ] implement LCR
+[ ] track regret in server
+[ ] allow regret reset in server
+[ ] implement LeCaR
+
 
 [ ] wrap tests around extracted functionality
 [ ] parameterize server with cache size (in record/key count)
