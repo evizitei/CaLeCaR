@@ -2,6 +2,8 @@ package cache
 
 import (
 	"errors"
+	"fmt"
+	"strconv"
 )
 
 /*Cache is the thing the server knows
@@ -224,12 +226,27 @@ type Lfu struct {
 	head    *lfuNode
 	tail    *lfuNode
 	lookup  map[string]*lfuNode
+	debug   bool
 }
 
 /*KeyPresent is true if the key is in the cache right now*/
 func (l *Lfu) KeyPresent(k string) bool {
 	_, ok := l.lookup[k]
 	return ok
+}
+
+func (l *Lfu) debugCache() {
+	fmt.Println("CACHE STATE")
+	dbg := ""
+	node := l.head
+	for {
+		dbg = dbg + "->" + node.key + ":" + strconv.Itoa(node.accessCount)
+		node = node.next
+		if node == nil {
+			break
+		}
+	}
+	fmt.Println(dbg)
 }
 
 func (l *Lfu) reorderList(node *lfuNode) {
@@ -282,6 +299,9 @@ func (l *Lfu) GetValue(k string) (Entry, error) {
 	} else {
 		l.reorderList(node)
 	}
+	if l.debug {
+		l.debugCache()
+	}
 	return node.entry, nil
 }
 
@@ -294,6 +314,9 @@ func (l *Lfu) SetValue(k string, v Entry) error {
 		l.tail = node
 		l.lookup[k] = node
 		l.length = 1
+		if l.debug {
+			l.debugCache()
+		}
 		return nil
 	} else if l.length == l.maxSize {
 		// evict one entry
@@ -307,6 +330,9 @@ func (l *Lfu) SetValue(k string, v Entry) error {
 		newHead.prev = newNode
 		l.lookup[k] = newNode
 		l.reorderList(newNode)
+		if l.debug {
+			l.debugCache()
+		}
 		// length does not change
 		return nil
 	}
@@ -318,12 +344,16 @@ func (l *Lfu) SetValue(k string, v Entry) error {
 	l.head = newNode
 	l.lookup[k] = newNode
 	l.reorderList(newNode)
+	l.length++
+	if l.debug {
+		l.debugCache()
+	}
 	return nil
 }
 
 func newLfu(size int) *Lfu {
 	lk := make(map[string]*lfuNode)
-	return &Lfu{maxSize: size, length: 0, head: nil, tail: nil, lookup: lk}
+	return &Lfu{maxSize: size, length: 0, head: nil, tail: nil, lookup: lk, debug: false}
 }
 
 /*NewCache is a factory for building a cache implementation
