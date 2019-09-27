@@ -58,7 +58,8 @@ Again, there's a make task: `make query`
 [-] parameterize cache replacement strategy, implement FIFO
 [-] implement LRU
 [-] implement LFU
-[ ] implement LCR
+[-] implement LCR
+[ ] build traffic patterns favorable to each existing cache type
 [ ] track regret in server
 [ ] allow regret reset in server
 [ ] implement LeCaR
