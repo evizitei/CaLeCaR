@@ -57,7 +57,7 @@ Again, there's a make task: `make query`
 [-] implement NONE cache replacement strategy
 [-] parameterize cache replacement strategy, implement FIFO
 [-] implement LRU
-[ ] implement LFU
+[-] implement LFU
 [ ] implement LCR
 [ ] track regret in server
 [ ] allow regret reset in server

@@ -260,8 +260,14 @@ func (l *Lfu) reorderList(node *lfuNode) {
 				newHead.prev = nil
 				node.next = rightHead
 				node.prev = newHead
-				rightHead.prev = node
+				newHead.next = node
 				l.head = newHead
+				if rightHead == nil {
+					// node is now tail
+					l.tail = node
+					return
+				}
+				rightHead.prev = node
 			} else {
 				// node in the middle of list
 				leftTail := node.prev
@@ -356,6 +362,151 @@ func newLfu(size int) *Lfu {
 	return &Lfu{maxSize: size, length: 0, head: nil, tail: nil, lookup: lk, debug: false}
 }
 
+/*useful for easily tracking the "least costly to recompute" added node in the
+cache*/
+type lcrNode struct {
+	key   string
+	entry Entry
+	prev  *lcrNode
+	next  *lcrNode
+}
+
+/*Lcr is a cache implementation adapting to cost of recomputation.
+When full, it will always decide to evict the key with the lowest cost to recompute.*/
+type Lcr struct {
+	maxSize int
+	length  int
+	head    *lcrNode
+	tail    *lcrNode
+	lookup  map[string]*lcrNode
+	debug   bool
+}
+
+/*KeyPresent is true if the key is in the cache right now*/
+func (l *Lcr) KeyPresent(k string) bool {
+	_, ok := l.lookup[k]
+	return ok
+}
+
+func (l *Lcr) debugCache() {
+	fmt.Println("CACHE STATE")
+	dbg := ""
+	node := l.head
+	for {
+		dbg = dbg + "->" + node.key + ":" + strconv.Itoa(node.entry.cost)
+		node = node.next
+		if node == nil {
+			break
+		}
+	}
+	fmt.Println(dbg)
+}
+
+func (l *Lcr) reorderList(node *lcrNode) {
+	for {
+		if node.entry.cost > node.next.entry.cost {
+			// swap positions
+			if node.prev == nil {
+				// node is currently HEAD
+				newHead := node.next
+				rightHead := newHead.next
+				newHead.prev = nil
+				node.next = rightHead
+				node.prev = newHead
+				newHead.next = node
+				l.head = newHead
+				if rightHead == nil {
+					// node is now tail
+					l.tail = node
+					return
+				}
+				rightHead.prev = node
+			} else {
+				// node in the middle of list
+				leftTail := node.prev
+				swapNode := node.next
+				rightHead := swapNode.next
+				leftTail.next = swapNode
+				swapNode.prev = leftTail
+				swapNode.next = node
+				node.prev = swapNode
+				node.next = rightHead
+				if rightHead == nil {
+					// node is now tail
+					l.tail = node
+					return
+				}
+				rightHead.prev = node
+			}
+		} else {
+			return
+		}
+	}
+}
+
+/*GetValue will return the entry if present in the lookup*/
+func (l *Lcr) GetValue(k string) (Entry, error) {
+	node, ok := l.lookup[k]
+	if !ok {
+		return Entry{}, errors.New("Key not present in lookup hash")
+	}
+	if l.debug {
+		l.debugCache()
+	}
+	return node.entry, nil
+}
+
+/*SetValue inserts a new cache entry, evicting one if necessary*/
+func (l *Lcr) SetValue(k string, v Entry) error {
+	if l.length == 0 {
+		// create list head/tail
+		node := &lcrNode{entry: v, key: k}
+		l.head = node
+		l.tail = node
+		l.lookup[k] = node
+		l.length = 1
+		if l.debug {
+			l.debugCache()
+		}
+		return nil
+	} else if l.length == l.maxSize {
+		// evict one entry
+		newNode := &lcrNode{entry: v, key: k}
+		prevHead := l.head
+		delete(l.lookup, prevHead.key)
+		newHead := prevHead.next
+		newHead.prev = nil
+		l.head = newNode
+		newNode.next = newHead
+		newHead.prev = newNode
+		l.lookup[k] = newNode
+		l.reorderList(newNode)
+		if l.debug {
+			l.debugCache()
+		}
+		// length does not change
+		return nil
+	}
+	// just grow the list
+	newNode := &lcrNode{entry: v, key: k}
+	oldHead := l.head
+	newNode.next = oldHead
+	oldHead.prev = newNode
+	l.head = newNode
+	l.lookup[k] = newNode
+	l.reorderList(newNode)
+	l.length++
+	if l.debug {
+		l.debugCache()
+	}
+	return nil
+}
+
+func newLcr(size int) *Lcr {
+	lk := make(map[string]*lcrNode)
+	return &Lcr{maxSize: size, length: 0, head: nil, tail: nil, lookup: lk, debug: false}
+}
+
 /*NewCache is a factory for building a cache implementation
 of the requested strategy*/
 func NewCache(cacheType string, size int) (Cache, error) {
@@ -367,6 +518,8 @@ func NewCache(cacheType string, size int) (Cache, error) {
 		return newLru(size), nil
 	} else if cacheType == "LFU" {
 		return newLfu(size), nil
+	} else if cacheType == "LCR" {
+		return newLcr(size), nil
 	}
 	return &NoOp{}, errors.New("No cache exists of type '" + cacheType + "'")
 }
