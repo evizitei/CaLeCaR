@@ -18,6 +18,16 @@ default behavior:
   -cache_size 0
 ```
 
+Set a different cache type by changing the cache_type argument:
+
+```bash
+./bin/server \
+  -logfile ./log/server.log \
+  -data_file ./data/test_set_1.csv \
+  -cache_type LECAR \
+  -cache_size 20
+```
+
 There's a make task for launching this:  `make serve`
 
 One easy way to test the server is to use something like
@@ -36,6 +46,13 @@ behavior, try using the client program:
 ```bash
 ./bin/client \
   -keyfile ./data/client/traffic_set_baseline.csv
+```
+
+and you can choose which traffic pattern to use with the
+keyfile argument:
+
+```bash
+./bin/client -keyfile ./data/client/traffic_set_lru.csv
 ```
 
 Again, there's a make task: `make query`
