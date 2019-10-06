@@ -522,6 +522,8 @@ func NewCache(cacheType string, size int) (Cache, error) {
 		return newLcr(size), nil
 	} else if cacheType == "LECAR" {
 		return newLecar(size), nil
+	} else if cacheType == "CALECAR" {
+		return newCalecar(size), nil
 	}
 	return &NoOp{}, errors.New("No cache exists of type '" + cacheType + "'")
 }

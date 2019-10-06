@@ -76,10 +76,11 @@ Again, there's a make task: `make query`
 [-] implement LRU
 [-] implement LFU
 [-] implement LCR
+[-] implement LeCaR
 [ ] build traffic patterns favorable to each existing cache type
 [ ] track regret in server
 [ ] allow regret reset in server
-[ ] implement LeCaR
+
 
 
 [ ] wrap tests around extracted functionality

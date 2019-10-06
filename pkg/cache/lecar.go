@@ -32,7 +32,9 @@ type lecarHistoryNode struct {
 	prev         *lecarHistoryNode
 }
 
-/*Lecar balances a frequency and recency distribution*/
+/*Lecar balances a frequency and recency distribution
+https://www.usenix.org/system/files/conference/hotstorage18/hotstorage18-paper-vietri.pdf
+*/
 type Lecar struct {
 	maxSize       int
 	length        int
@@ -223,6 +225,28 @@ func (l *Lecar) removeFromLfu(node *lecarLfuNode) {
 	}
 }
 
+func (l *Lecar) removeFromHistory(histNode *lecarHistoryNode) {
+	if histNode == l.historyHead {
+		newHistHead := histNode.next
+		newHistHead.prev = nil
+		l.historyHead = newHistHead
+		histNode.next = nil
+	} else if histNode == l.historyTail {
+		newHistTail := histNode.prev
+		newHistTail.next = nil
+		l.historyTail = newHistTail
+		histNode.prev = nil
+	} else {
+		// node is in the middle, stitch together
+		tailLeft := histNode.prev
+		headRight := histNode.next
+		tailLeft.next = headRight
+		headRight.prev = tailLeft
+		histNode.prev = nil
+		histNode.next = nil
+	}
+}
+
 func (l *Lecar) appendToLfu(lfuNode *lecarLfuNode) {
 	oldLfuHead := l.lfuHead
 	lfuNode.next = oldLfuHead
@@ -264,6 +288,11 @@ func (l *Lecar) putInHistory(entryNode *lecarLookupNode, evictionType string) {
 		prevHistoryTail.next = historyNode
 		historyNode.prev = prevHistoryTail
 		l.historyTail = historyNode
+	}
+	oldHistNode, ok := l.historyLookup[historyNode.key]
+	if ok {
+		l.removeFromHistory(oldHistNode)
+		delete(l.historyLookup, oldHistNode.key)
 	}
 	l.historyLookup[historyNode.key] = historyNode
 }
