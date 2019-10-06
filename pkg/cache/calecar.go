@@ -360,6 +360,7 @@ func (c *Calecar) putInHistory(entryNode *calecarLookupNode, evictionType string
 		// create linked list
 		c.historyHead = historyNode
 		c.historyTail = historyNode
+		c.historyLength = 1
 	} else if c.historyLength == c.maxSize {
 		// FIFO head/tail
 		prevHistHead := c.historyHead
@@ -378,11 +379,13 @@ func (c *Calecar) putInHistory(entryNode *calecarLookupNode, evictionType string
 		prevHistoryTail.next = historyNode
 		historyNode.prev = prevHistoryTail
 		c.historyTail = historyNode
+		c.historyLength = c.historyLength + 1
 	}
 	oldHistNode, ok := c.historyLookup[historyNode.key]
 	if ok {
 		c.removeFromHistory(oldHistNode)
 		delete(c.historyLookup, oldHistNode.key)
+		c.historyLength = c.historyLength - 1
 	}
 	c.historyLookup[historyNode.key] = historyNode
 }

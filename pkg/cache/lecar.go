@@ -270,6 +270,7 @@ func (l *Lecar) putInHistory(entryNode *lecarLookupNode, evictionType string) {
 		// create linked list
 		l.historyHead = historyNode
 		l.historyTail = historyNode
+		l.historyLength = 1
 	} else if l.historyLength == l.maxSize {
 		// FIFO head/tail
 		prevHistHead := l.historyHead
@@ -288,11 +289,13 @@ func (l *Lecar) putInHistory(entryNode *lecarLookupNode, evictionType string) {
 		prevHistoryTail.next = historyNode
 		historyNode.prev = prevHistoryTail
 		l.historyTail = historyNode
+		l.historyLength = l.historyLength + 1
 	}
 	oldHistNode, ok := l.historyLookup[historyNode.key]
 	if ok {
 		l.removeFromHistory(oldHistNode)
 		delete(l.historyLookup, oldHistNode.key)
+		l.historyLength = l.historyLength - 1
 	}
 	l.historyLookup[historyNode.key] = historyNode
 }
