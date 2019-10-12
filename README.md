@@ -52,8 +52,11 @@ and you can choose which traffic pattern to use with the
 keyfile argument:
 
 ```bash
-./bin/client -keyfile ./data/client/traffic_set_lru.csv
+./bin/client -keyfile ./data/client/generated_lru_keys.csv
+./bin/client -keyfile ./data/client/generated_lfu_keys.csv
 ```
+
+You can also submit multiple keyfiles
 
 Again, there's a make task: `make query`
 
@@ -75,15 +78,54 @@ python ./data/key_generator.py \
   --output_count=100000
 ```
 
+The LFU genrator chooses from a "frequently used" set most of the time, and randomly injects
+scans of random (useless to cache) runs large enough to purge LRU caches.
+
+```
+python ./data/key_generator.py \
+  --cache_type=LFU \
+  --output_filename=./data/client/generated_lfu_keys.csv \
+  --output_count=100000
+```
+
+The LCR genrator has 2 "frequently used" sets, a low cost one and a high cost one.
+It works much like the LFU generator, but half the time it pulls the high cost keys.
+
+```
+python ./data/key_generator.py \
+  --cache_type=LCR \
+  --output_filename=./data/client/generated_lcr_keys.csv \
+  --output_count=100000
+```
+
 ### COMPARISON DATA:
 
-| DATASET | ALGORITHM |      COST     |
-| LRU     | LRU       |   608,685,877 |
-| LRU     | LFU       | 2,780,788,465 |
-| LRU     | FIFO      |   647,607,222 |
-| LRU     | LCR       | 1,292,405,204 |
-| LRU     | LECAR     |   669,338,196 |
-| LRU     | CALECAR   |   653,562,344 |
+| DATASET | ALGORITHM |      COST     | COST-hitrate |
+------------------------------------------------------
+| LRU     | NONE      |    | |
+| LRU     | LRU       |   608,685,877 | |
+| LRU     | LFU       | 2,780,788,465 | |
+| LRU     | FIFO      |   647,607,222 | |
+| LRU     | LCR       | 1,292,405,204 | |
+| LRU     | LECAR     |   669,338,196 | |
+| LRU     | CALECAR   |   653,562,344 | |
+---------------------------------------
+| LFU     | NONE      |    | |
+| LFU     | LRU       | 3,108,356,918 | |
+| LFU     | LFU       | 2,476,908,518 | |
+| LFU     | FIFO      | 3,121,685,770 | |
+| LFU     | LCR       | 2,509,968,185 | |
+| LFU     | LECAR     | 3,077,671,875 | |
+| LFU     | CALECAR   | 2,998,214,157 | |
+---------------------------------------
+| LCR     | NONE      | 3,955,639,330 | 0.00 |
+| LCR     | LRU       | 3,637,912,950 | 0.08 |
+| LCR     | LFU       |  | |
+| LCR     | FIFO      |  | |
+| LCR     | LCR       |  | |
+| LCR     | LECAR     |  | |
+| LCR     | CALECAR   |  | |
+---------------------------------------
 
 ### TODO
 

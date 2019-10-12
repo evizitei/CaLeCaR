@@ -75,27 +75,30 @@ func queryKey(conf *clientConf, key string) queryResult {
 
 func queryTrafficPattern(conf *clientConf) {
 	accumulatedCost := 0
-	keysF, err := os.OpenFile(*conf.keyfile, os.O_RDONLY, 0666)
-	if err != nil {
-		fmt.Println("ERROR reading keyfile: ", err)
-		os.Exit(-1)
-	}
-	reader := csv.NewReader(keysF)
-	for {
-		row, err := reader.Read()
-		if err == io.EOF {
-			break
-		}
+	fileList := strings.Split(*conf.keyfile, ",")
+	for _, keyFile := range fileList {
+		keysF, err := os.OpenFile(keyFile, os.O_RDONLY, 0666)
 		if err != nil {
-			fmt.Println("ERROR reading row of keyfile: ", err)
+			fmt.Println("ERROR reading keyfile: ", err)
 			os.Exit(-1)
 		}
-		key := row[0]
-		result := queryKey(conf, key)
-		fmt.Println("QUERY RESULT: key->" + key +
-			", val->" + result.value +
-			", cost->" + strconv.Itoa(result.cost))
-		accumulatedCost = overflow.Addp(accumulatedCost, result.cost)
+		reader := csv.NewReader(keysF)
+		for {
+			row, err := reader.Read()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				fmt.Println("ERROR reading row of keyfile: ", err)
+				os.Exit(-1)
+			}
+			key := row[0]
+			result := queryKey(conf, key)
+			fmt.Println("QUERY RESULT: key->" + key +
+				", val->" + result.value +
+				", cost->" + strconv.Itoa(result.cost))
+			accumulatedCost = overflow.Addp(accumulatedCost, result.cost)
+		}
 	}
 	fmt.Println("TRAFFIC COST: ", accumulatedCost)
 }
