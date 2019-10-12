@@ -12,7 +12,7 @@ serve:
 	  -logfile ./log/server.log \
 	  -data_file ./data/test_set_1.csv \
 	  -cache_type LRU \
-	  -cache_size 12
+	  -cache_size 250
 
 query:
 	./bin/client -keyfile ./data/client/traffic_set_baseline.csv

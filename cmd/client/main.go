@@ -10,6 +10,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/JohnCGriffin/overflow"
 )
 
 type clientConf struct {
@@ -93,7 +95,7 @@ func queryTrafficPattern(conf *clientConf) {
 		fmt.Println("QUERY RESULT: key->" + key +
 			", val->" + result.value +
 			", cost->" + strconv.Itoa(result.cost))
-		accumulatedCost = accumulatedCost + result.cost
+		accumulatedCost = overflow.Addp(accumulatedCost, result.cost)
 	}
 	fmt.Println("TRAFFIC COST: ", accumulatedCost)
 }
