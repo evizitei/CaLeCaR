@@ -2,6 +2,7 @@ package cache
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"math/rand"
 )
@@ -78,6 +79,9 @@ func (l *Lecar) updateAlgoWeights(node *lecarHistoryNode) {
 	normConst := (wLfu + wLru)
 	l.weightLfu = wLfu / normConst
 	l.weightLru = wLru / normConst
+	if l.debug {
+		fmt.Println("LECAR WEIGHTS: LRU->", l.weightLru, ", LFU->", l.weightLfu)
+	}
 }
 
 /*KeyPresent is true if the key is in the cache right now*/
@@ -384,5 +388,6 @@ func newLecar(size int) *Lecar {
 		historyLength: 0,
 		lambda:        0.45,
 		discount:      0.99,
+		debug:         false,
 	}
 }
