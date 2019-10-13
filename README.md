@@ -75,7 +75,8 @@ and to move the center of the distribution around in a random walk.
 python ./data/key_generator.py \
   --cache_type=LRU \
   --output_filename=./data/client/generated_lru_keys.csv \
-  --output_count=100000
+  --output_count=100000 \
+  --max_key_val=10000
 ```
 
 The LFU genrator chooses from a "frequently used" set most of the time, and randomly injects
@@ -85,7 +86,8 @@ scans of random (useless to cache) runs large enough to purge LRU caches.
 python ./data/key_generator.py \
   --cache_type=LFU \
   --output_filename=./data/client/generated_lfu_keys.csv \
-  --output_count=100000
+  --output_count=100000 \
+  --max_key_val=10000
 ```
 
 The LCR genrator has 2 "frequently used" sets, a low cost one and a high cost one.
@@ -95,37 +97,53 @@ It works much like the LFU generator, but half the time it pulls the high cost k
 python ./data/key_generator.py \
   --cache_type=LCR \
   --output_filename=./data/client/generated_lcr_keys.csv \
-  --output_count=100000
+  --output_count=100000 \
+  --max_key_val=10000
 ```
 
 ### COMPARISON DATA:
 
+https://docs.google.com/spreadsheets/d/19LT0O388c1sHTvBwB9Q5zxfHvON7khZYlq-MAQOhn4M/edit#gid=0
+
+For Full Dataset
+
 | DATASET | ALGORITHM |      COST     | COST-hitrate |
 ------------------------------------------------------
-| LRU     | NONE      |    | |
-| LRU     | LRU       |   608,685,877 | |
-| LRU     | LFU       | 2,780,788,465 | |
-| LRU     | FIFO      |   647,607,222 | |
-| LRU     | LCR       | 1,292,405,204 | |
-| LRU     | LECAR     |   669,338,196 | |
-| LRU     | CALECAR   |   653,562,344 | |
+| LRU     | NONE      | 3,011,314,923 | 0.000 |
+| LRU     | LRU       |   608,685,877 | 0.798 |
+| LRU     | LFU       | 2,780,788,465 | 0.077 |
+| LRU     | FIFO      |   647,607,222 | 0.785 |
+| LRU     | LCR       | 1,292,405,204 | 0.571 |
+| LRU     | LECAR     |   669,338,196 | 0.778 |
+| LRU     | CALECAR   |   653,562,344 | 0.783 |
 ---------------------------------------
-| LFU     | NONE      |    | |
-| LFU     | LRU       | 3,108,356,918 | |
-| LFU     | LFU       | 2,476,908,518 | |
-| LFU     | FIFO      | 3,121,685,770 | |
-| LFU     | LCR       | 2,509,968,185 | |
-| LFU     | LECAR     | 3,077,671,875 | |
-| LFU     | CALECAR   | 2,998,214,157 | |
+| LFU     | NONE      | 3,581,836,682 | 0.000 |
+| LFU     | LRU       | 3,108,356,918 | 0.132 |
+| LFU     | LFU       | 2,476,908,518 | 0.308 |
+| LFU     | FIFO      | 3,121,685,770 | 0.128 |
+| LFU     | LCR       | 2,509,968,185 | 0.299 |
+| LFU     | LECAR     | 3,077,671,875 | 0.141 |
+| LFU     | CALECAR   | 2,998,214,157 | 0.163 |
 ---------------------------------------
-| LCR     | NONE      | 3,955,639,330 | 0.00 |
-| LCR     | LRU       | 3,637,912,950 | 0.08 |
+| LCR     | NONE      | 4,057,993,944 | 0.000 |
+| LCR     | LRU       |  | |
 | LCR     | LFU       |  | |
 | LCR     | FIFO      |  | |
-| LCR     | LCR       |  | |
-| LCR     | LECAR     |  | |
-| LCR     | CALECAR   |  | |
+| LCR     | LCR       | 2,444,963,263 | 0.397 |
+| LCR     | LECAR     | 3,685,009,773 | 0.092 |
+| LCR     | CALECAR   | 3,600,191,459 | 0.113 |
 ---------------------------------------
+| all-3   | NONE      | 10,651,145,549 | 0.000 |
+| all-3   | LRU       |  7,404,534,146 | 0.305 |
+| all-3   | LFU       | 10,335,119,024 | 0.030 |
+| all-3   | FIFO      |  | |
+| all-3   | LCR       |  | |
+| all-3   | LECAR     |  | |
+| all-3   | CALECAR   |  | |
+
+
+For first half of dataset.
+
 
 ### TODO
 

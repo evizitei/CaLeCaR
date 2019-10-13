@@ -20,6 +20,7 @@ type ServerConf struct {
 	DataFile  *string
 	CacheType *string
 	CacheSize int
+	Verbose   bool
 }
 
 /*Entry is the thing stored in a cache, both
@@ -53,9 +54,13 @@ func (s *Server) handleConnection(c net.Conn) {
 	command := messageParts[0]
 	if command == "fetch" {
 		fetchKey := strings.TrimSpace(strings.Replace(messageParts[1], "\n", "", -1))
-		s.logger.Println("Fetching ", fetchKey)
+		if s.config.Verbose {
+			s.logger.Println("Fetching ", fetchKey)
+		}
 		if s.cache.KeyPresent(fetchKey) {
-			s.logger.Println("Found in cache! ", fetchKey)
+			if s.config.Verbose {
+				s.logger.Println("Found in cache! ", fetchKey)
+			}
 			entry, err := s.cache.GetValue(fetchKey)
 			if err != nil {
 				s.logger.Println("ERROR IN CACHE: ", err)

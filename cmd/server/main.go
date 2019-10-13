@@ -11,12 +11,14 @@ func parseArgs() *cache.ServerConf {
 	dataFile := flag.String("data_file", "./data/test_set_1.csv", "file to read working set from")
 	cacheType := flag.String("cache_type", "FIFO", "One of (NONE, FIFO, LRU, LFU, LCR, LECAR, LECARAC)")
 	cacheSize := flag.Int("cache_size", 1000, "number of entries the cache is able to hold")
+	verbose := flag.Bool("verbose", false, "wheter you want a lot of output")
 	flag.Parse()
 	return &cache.ServerConf{
 		LogFile:   logFile,
 		DataFile:  dataFile,
 		CacheType: cacheType,
 		CacheSize: *cacheSize,
+		Verbose:   *verbose,
 	}
 }
 

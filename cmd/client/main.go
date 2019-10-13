@@ -18,6 +18,7 @@ type clientConf struct {
 	host    string
 	keyfile *string
 	port    int
+	verbose bool
 }
 
 type queryResult struct {
@@ -27,11 +28,13 @@ type queryResult struct {
 
 func parseArgs() *clientConf {
 	keyFile := flag.String("keyfile", "./data/client/traffic_set_baseline.csv", "file with series of keys to fetch")
+	verbose := flag.Bool("verbose", false, "if you want lots of output")
 	flag.Parse()
 	return &clientConf{
 		keyfile: keyFile,
 		port:    1234,
 		host:    "localhost",
+		verbose: *verbose,
 	}
 }
 
@@ -75,7 +78,10 @@ func queryKey(conf *clientConf, key string) queryResult {
 
 func queryTrafficPattern(conf *clientConf) {
 	accumulatedCost := 0
+	totalRequests := 0
+	cacheServedRequests := 0
 	fileList := strings.Split(*conf.keyfile, ",")
+	keyIndex := 0
 	for _, keyFile := range fileList {
 		keysF, err := os.OpenFile(keyFile, os.O_RDONLY, 0666)
 		if err != nil {
@@ -94,13 +100,26 @@ func queryTrafficPattern(conf *clientConf) {
 			}
 			key := row[0]
 			result := queryKey(conf, key)
-			fmt.Println("QUERY RESULT: key->" + key +
-				", val->" + result.value +
-				", cost->" + strconv.Itoa(result.cost))
+			totalRequests++
+			if result.cost == 0 {
+				cacheServedRequests++
+			}
+			if conf.verbose {
+				fmt.Println("QUERY RESULT: key->" + key +
+					", val->" + result.value +
+					", cost->" + strconv.Itoa(result.cost))
+			}
+			keyIndex++
+			if keyIndex%10000 == 0 {
+				hitrate := float64(cacheServedRequests) / float64(totalRequests)
+				fmt.Println("KEY ", keyIndex, " CURRENT ", accumulatedCost, "HITRATE", hitrate)
+			}
 			accumulatedCost = overflow.Addp(accumulatedCost, result.cost)
 		}
 	}
 	fmt.Println("TRAFFIC COST: ", accumulatedCost)
+	hitrate := float64(cacheServedRequests) / float64(totalRequests)
+	fmt.Println("HIT RATE:", hitrate)
 }
 
 func main() {
