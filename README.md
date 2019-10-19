@@ -101,6 +101,17 @@ python ./data/key_generator.py \
   --max_key_val=10000
 ```
 
+There's also a cost_adjuster script for taking a keyset
+and scaling up or down it's cost deltas:
+
+```
+python ./data/cost_adjuster.py \
+  --input_filename=./data/test_set_1.csv \
+  --direction=DOWN \
+  --output_filename=./data/test_set_cheap.csv \
+  --factor=50
+```
+
 ### COMPARISON DATA:
 
 https://docs.google.com/spreadsheets/d/19LT0O388c1sHTvBwB9Q5zxfHvON7khZYlq-MAQOhn4M/edit#gid=0
